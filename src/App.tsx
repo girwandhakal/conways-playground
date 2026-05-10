@@ -34,35 +34,46 @@ export default function App() {
 
   const updateStats = useCallback((gen: number, grid: Set<string>) => {
     const liveCount = countLiveCells(grid);
-    setStats(prev => [...prev, { generation: gen, liveCells: liveCount }]);
-  }, [countLiveCells]);
-
-  const handleStep = useCallback(() => {
-    setGrid(prev => {
-      const next = nextGeneration(prev, survivalRules, birthRules);
-      
-      // Check for convergence
-      let changed = false;
-      if (prev.size !== next.size) {
-        changed = true;
-      } else {
-        for (const key of prev) {
-          if (!next.has(key)) {
-            changed = true;
-            break;
-          }
-        }
-      }
-
-      if (!changed) {
-        setIsRunning(false);
-        setIsConverged(true);
+    setStats(prev => {
+      if (prev.length > 0 && prev[prev.length - 1].generation === gen) {
         return prev;
       }
-
-      setGeneration(g => g + 1);
-      return next;
+      return [...prev, { generation: gen, liveCells: liveCount }];
     });
+  }, [countLiveCells]);
+
+  const gridRef = useRef(grid);
+  const generationRef = useRef(generation);
+
+  useEffect(() => {
+    gridRef.current = grid;
+    generationRef.current = generation;
+  }, [grid, generation]);
+
+  const handleStep = useCallback(() => {
+    const currentGrid = gridRef.current;
+    const next = nextGeneration(currentGrid, survivalRules, birthRules);
+    
+    // Check for convergence
+    let changed = false;
+    if (currentGrid.size !== next.size) {
+      changed = true;
+    } else {
+      for (const key of currentGrid) {
+        if (!next.has(key)) {
+          changed = true;
+          break;
+        }
+      }
+    }
+
+    if (!changed) {
+      setIsRunning(false);
+      setIsConverged(true);
+    } else {
+      setGrid(next);
+      setGeneration(g => g + 1);
+    }
   }, [survivalRules, birthRules]);
 
   useEffect(() => {
