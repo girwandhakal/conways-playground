@@ -1,33 +1,38 @@
-export const createGrid = (rows: number, cols: number): boolean[][] => {
-  return Array.from({ length: rows }, () => Array(cols).fill(false));
+export const createGrid = (rows: number, cols: number): Set<string> => {
+  return new Set<string>();
 };
 
-export const nextGeneration = (grid: boolean[][], survivalRules: number[] = [2, 3], birthRules: number[] = [3]): boolean[][] => {
-  const rows = grid.length;
-  const cols = grid[0].length;
-  const next = createGrid(rows, cols);
+export const nextGeneration = (grid: Set<string>, survivalRules: number[] = [2, 3], birthRules: number[] = [3]): Set<string> => {
+  const next = new Set<string>();
+  const neighborCounts = new Map<string, number>();
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      let neighbors = 0;
-      for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-          if (i === 0 && j === 0) continue;
-          const nr = r + i;
-          const nc = c + j;
-          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-            if (grid[nr][nc]) neighbors++;
-          }
-        }
-      }
-
-      const isAlive = grid[r][c];
-      if (isAlive && survivalRules.includes(neighbors)) {
-        next[r][c] = true;
-      } else if (!isAlive && birthRules.includes(neighbors)) {
-        next[r][c] = true;
+  for (const key of grid) {
+    const [rStr, cStr] = key.split(',');
+    const r = parseInt(rStr, 10);
+    const c = parseInt(cStr, 10);
+    
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (i === 0 && j === 0) continue;
+        const nr = r + i;
+        const nc = c + j;
+        const nKey = `${nr},${nc}`;
+        neighborCounts.set(nKey, (neighborCounts.get(nKey) || 0) + 1);
       }
     }
   }
+
+  for (const [key, count] of neighborCounts) {
+    if (grid.has(key)) {
+      if (survivalRules.includes(count)) {
+        next.add(key);
+      }
+    } else {
+      if (birthRules.includes(count)) {
+        next.add(key);
+      }
+    }
+  }
+  
   return next;
 };

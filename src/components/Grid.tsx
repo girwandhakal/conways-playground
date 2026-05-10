@@ -1,17 +1,17 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 
 interface GridProps {
-  grid: boolean[][];
+  grid: Set<string>;
+  rows: number;
+  cols: number;
   onToggleCell: (r: number, c: number) => void;
   onPaintCell: (r: number, c: number) => void;
 }
 
-export const Grid: React.FC<GridProps> = ({ grid, onToggleCell, onPaintCell }) => {
+export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPaintCell }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0, cellSize: 0 });
-  const rows = grid.length;
-  const cols = grid[0]?.length || 0;
 
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -98,13 +98,13 @@ export const Grid: React.FC<GridProps> = ({ grid, onToggleCell, onPaintCell }) =
     // Draw cells
     ctx.fillStyle = '#1E1B4B';
     
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        if (grid[r][c]) {
-          const gap = cellSize > 2 ? 0.3 : 0;
-          ctx.fillRect(c * cellSize + gap, r * cellSize + gap, cellSize - gap * 2, cellSize - gap * 2);
-        }
-      }
+    for (const key of grid) {
+      const [rStr, cStr] = key.split(',');
+      const r = parseInt(rStr, 10);
+      const c = parseInt(cStr, 10);
+      
+      const gap = cellSize > 2 ? 0.3 : 0;
+      ctx.fillRect(c * cellSize + gap, r * cellSize + gap, cellSize - gap * 2, cellSize - gap * 2);
     }
   }, [grid, dimensions, rows, cols, scale, pan]);
 
@@ -126,10 +126,8 @@ export const Grid: React.FC<GridProps> = ({ grid, onToggleCell, onPaintCell }) =
     const r = Math.floor(y / dimensions.cellSize);
     const c = Math.floor(x / dimensions.cellSize);
     
-    if (r >= 0 && r < rows && c >= 0 && c < cols) {
-      return { r, c };
-    }
-    return null;
+    // Let players interact with an infinite grid! No bounding constraints on clicks.
+    return { r, c };
   };
 
   const maxZoom = Math.max(8, rows / 4);

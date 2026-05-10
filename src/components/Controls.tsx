@@ -17,6 +17,8 @@ interface ControlsProps {
   onSurvivalRulesChange: (rules: number[]) => void;
   birthRules: number[];
   onBirthRulesChange: (rules: number[]) => void;
+  generationLimit: number | null;
+  onGenerationLimitChange: (limit: number | null) => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -33,6 +35,8 @@ export const Controls: React.FC<ControlsProps> = ({
   onSurvivalRulesChange,
   birthRules,
   onBirthRulesChange,
+  generationLimit,
+  onGenerationLimitChange,
 }) => {
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
@@ -182,6 +186,40 @@ export const Controls: React.FC<ControlsProps> = ({
                         )}
                       >
                         {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-[9px] font-sans font-bold text-slate-400 uppercase tracking-wider">
+                    <span>Generation Limit</span>
+                    <span className="font-mono bg-slate-100/50 px-1.5 py-0.5 rounded text-slate-500">{generationLimit === null ? '∞' : generationLimit}</span>
+                  </div>
+                  <div className="flex bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => onGenerationLimitChange(null)}
+                      className={cn(
+                        "flex-1 py-1.5 text-[10px] font-bold font-sans transition-colors",
+                        generationLimit === null
+                          ? "bg-black text-white"
+                          : "text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      None
+                    </button>
+                    {[100, 500, 1000].map(limit => (
+                      <button
+                        key={limit}
+                        onClick={() => onGenerationLimitChange(limit)}
+                        className={cn(
+                          "flex-1 py-1.5 border-l border-slate-200 text-[10px] font-bold font-sans transition-colors",
+                          generationLimit === limit
+                            ? "bg-black text-white border-transparent"
+                            : "text-slate-500 hover:bg-slate-100"
+                        )}
+                      >
+                        {limit}
                       </button>
                     ))}
                   </div>

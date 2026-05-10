@@ -12,7 +12,7 @@ const INITIAL_GRID_SIZE = 50;
 
 export default function App() {
   const [gridSize, setGridSize] = useState(INITIAL_GRID_SIZE);
-  const [grid, setGrid] = useState<boolean[][]>(() => createGrid(gridSize, gridSize));
+  const [grid, setGrid] = useState<Set<string>>(() => createGrid(gridSize, gridSize));
   const [generation, setGeneration] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isConverged, setIsConverged] = useState(false);
@@ -23,14 +23,16 @@ export default function App() {
   const [showStatsMobile, setShowStatsMobile] = useState(false);
   const [survivalRules, setSurvivalRules] = useState<number[]>([2, 3]);
   const [birthRules, setBirthRules] = useState<number[]>([3]);
+  const [generationLimit, setGenerationLimit] = useState<number | null>(null);
+  const [isLimitReached, setIsLimitReached] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const countLiveCells = useCallback((currentGrid: boolean[][]) => {
-    return currentGrid.reduce((acc, row) => acc + row.filter(cell => cell).length, 0);
+  const countLiveCells = useCallback((currentGrid: Set<string>) => {
+    return currentGrid.size;
   }, []);
 
-  const updateStats = useCallback((gen: number, grid: boolean[][]) => {
+  const updateStats = useCallback((gen: number, grid: Set<string>) => {
     const liveCount = countLiveCells(grid);
     setStats(prev => [...prev, { generation: gen, liveCells: liveCount }]);
   }, [countLiveCells]);
@@ -41,14 +43,15 @@ export default function App() {
       
       // Check for convergence
       let changed = false;
-      for (let r = 0; r < prev.length; r++) {
-        for (let c = 0; c < prev[0].length; c++) {
-          if (prev[r][c] !== next[r][c]) {
+      if (prev.size !== next.size) {
+        changed = true;
+      } else {
+        for (const key of prev) {
+          if (!next.has(key)) {
             changed = true;
             break;
           }
         }
-        if (changed) break;
       }
 
       if (!changed) {
@@ -75,21 +78,31 @@ export default function App() {
 
   useEffect(() => {
     updateStats(generation, grid);
-  }, [generation, grid, updateStats]);
+    if (generationLimit !== null && generation >= generationLimit && isRunning) {
+      setIsRunning(false);
+      setIsLimitReached(true);
+    }
+  }, [generation, grid, updateStats, generationLimit, isRunning]);
 
   const handleToggleCell = (r: number, c: number) => {
     setGrid(prev => {
-      const newGrid = prev.map(row => [...row]);
-      newGrid[r][c] = !newGrid[r][c];
+      const newGrid = new Set(prev);
+      const key = `${r},${c}`;
+      if (newGrid.has(key)) {
+        newGrid.delete(key);
+      } else {
+        newGrid.add(key);
+      }
       return newGrid;
     });
   };
 
   const handlePaintCell = (r: number, c: number) => {
     setGrid(prev => {
-      if (prev[r][c]) return prev;
-      const newGrid = prev.map(row => [...row]);
-      newGrid[r][c] = true;
+      const key = `${r},${c}`;
+      if (prev.has(key)) return prev;
+      const newGrid = new Set(prev);
+      newGrid.add(key);
       return newGrid;
     });
   };
@@ -97,6 +110,7 @@ export default function App() {
   const handleReset = () => {
     setIsRunning(false);
     setIsConverged(false);
+    setIsLimitReached(false);
     setGrid(createGrid(gridSize, gridSize));
     setGeneration(0);
     setStats([]);
@@ -105,9 +119,19 @@ export default function App() {
   const handleRandomize = () => {
     setIsRunning(false);
     setIsConverged(false);
-    // Density varies between 5% and 45% (wider range)
+    setIsLimitReached(false);
     const threshold = 0.55 + Math.random() * 0.4; 
-    const newGrid = grid.map(row => row.map(() => Math.random() > threshold));
+    const newGrid = new Set<string>();
+    
+    // Instead of looping infinitely, we randomize within the user's defined grid size viewport
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (Math.random() > threshold) {
+          newGrid.add(`${r},${c}`);
+        }
+      }
+    }
+    
     setGrid(newGrid);
     setGeneration(0);
     setStats([]);
@@ -116,6 +140,7 @@ export default function App() {
   const handleGridSizeChange = (newSize: number) => {
     setIsRunning(false);
     setIsConverged(false);
+    setIsLimitReached(false);
     setGridSize(newSize);
     setGrid(createGrid(newSize, newSize));
     setGeneration(0);
@@ -126,7 +151,7 @@ export default function App() {
     <div className="flex flex-col h-screen bg-white text-black selection:bg-blue-100 relative">
       {/* Absolute Overlays Layer (Full App Blur) */}
       <AnimatePresence>
-        {(isConverged || showInfo) && (
+        {(isConverged || isLimitReached || showInfo) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -149,6 +174,27 @@ export default function App() {
                 </p>
                 <button 
                   onClick={() => setIsConverged(false)}
+                  className="mt-10 w-full py-4 bg-black text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest"
+                >
+                  Return to Bench
+                </button>
+              </motion.div>
+            ) : isLimitReached ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-white border border-slate-200 p-10 rounded-[40px] shadow-[0_32px_80px_-16px_rgba(0,0,0,0.3)] text-center max-w-sm mx-4"
+              >
+                <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-100 shadow-inner">
+                  <Terminal className="w-8 h-8 text-rose-600" />
+                </div>
+                <h3 className="text-2xl font-sans font-bold text-black mb-3">Limit Reached</h3>
+                <p className="text-sm text-slate-600 font-sans leading-relaxed">
+                  Generation limit of {generationLimit} reached. The simulation has paused.
+                </p>
+                <button 
+                  onClick={() => setIsLimitReached(false)}
                   className="mt-10 w-full py-4 bg-black text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest"
                 >
                   Return to Bench
@@ -265,6 +311,8 @@ export default function App() {
                       onSurvivalRulesChange={setSurvivalRules}
                       birthRules={birthRules}
                       onBirthRulesChange={setBirthRules}
+                      generationLimit={generationLimit}
+                      onGenerationLimitChange={setGenerationLimit}
                     />
                   </div>
                 </div>
@@ -327,6 +375,8 @@ export default function App() {
             onSurvivalRulesChange={setSurvivalRules}
             birthRules={birthRules}
             onBirthRulesChange={setBirthRules}
+            generationLimit={generationLimit}
+            onGenerationLimitChange={setGenerationLimit}
           />
         </div>
         
@@ -334,6 +384,8 @@ export default function App() {
           <div className="w-full h-full flex items-center justify-center p-4">
              <Grid 
                 grid={grid} 
+                rows={gridSize}
+                cols={gridSize}
                 onToggleCell={handleToggleCell} 
                 onPaintCell={handlePaintCell}
               />
