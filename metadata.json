@@ -1,0 +1,6 @@
+{
+  "name": "Conway's Playground",
+  "description": "An interactive, experimental visualization of Conway's Game of Life with real-time analytics and customizable parameters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
