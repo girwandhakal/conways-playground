@@ -2,7 +2,7 @@ export const createGrid = (rows: number, cols: number): Set<string> => {
   return new Set<string>();
 };
 
-export const nextGeneration = (grid: Set<string>, survivalRules: number[] = [2, 3], birthRules: number[] = [3]): Set<string> => {
+export const nextGeneration = (grid: Set<string>, rows: number, cols: number, survivalRules: number[] = [2, 3], birthRules: number[] = [3]): Set<string> => {
   const next = new Set<string>();
   const neighborCounts = new Map<string, number>();
 
@@ -11,13 +11,17 @@ export const nextGeneration = (grid: Set<string>, survivalRules: number[] = [2, 
     const r = parseInt(rStr, 10);
     const c = parseInt(cStr, 10);
     
+    if (r < 0 || r >= rows || c < 0 || c >= cols) continue;
+
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
         if (i === 0 && j === 0) continue;
         const nr = r + i;
         const nc = c + j;
-        const nKey = `${nr},${nc}`;
-        neighborCounts.set(nKey, (neighborCounts.get(nKey) || 0) + 1);
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+          const nKey = `${nr},${nc}`;
+          neighborCounts.set(nKey, (neighborCounts.get(nKey) || 0) + 1);
+        }
       }
     }
   }

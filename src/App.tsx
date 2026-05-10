@@ -52,7 +52,7 @@ export default function App() {
 
   const handleStep = useCallback(() => {
     const currentGrid = gridRef.current;
-    const next = nextGeneration(currentGrid, survivalRules, birthRules);
+    const next = nextGeneration(currentGrid, gridSize, gridSize, survivalRules, birthRules);
     
     // Check for convergence
     let changed = false;
@@ -74,7 +74,7 @@ export default function App() {
       setGrid(next);
       setGeneration(g => g + 1);
     }
-  }, [survivalRules, birthRules]);
+  }, [survivalRules, birthRules, gridSize]);
 
   useEffect(() => {
     if (isRunning) {
@@ -143,6 +143,40 @@ export default function App() {
       }
     }
     
+    setGrid(newGrid);
+    setGeneration(0);
+    setStats([]);
+  };
+
+  const handlePresetLoad = (pattern: any) => {
+    setIsRunning(false);
+    setIsConverged(false);
+    setIsLimitReached(false);
+    
+    const targetSize = Math.max(gridSize, pattern.gridSize || gridSize);
+    if (targetSize > gridSize) {
+      setGridSize(targetSize);
+    }
+
+    const newGrid = new Set<string>();
+    let maxR = -Infinity; let maxC = -Infinity; let minR = Infinity; let minC = Infinity;
+    for (const [r, c] of pattern.cells) {
+        if (r > maxR) maxR = r;
+        if (c > maxC) maxC = c;
+        if (r < minR) minR = r;
+        if (c < minC) minC = c;
+    }
+    
+    const pWidth = maxC - minC + 1;
+    const pHeight = maxR - minR + 1;
+
+    const offsetR = Math.floor((targetSize - pHeight) / 2) - minR;
+    const offsetC = Math.floor((targetSize - pWidth) / 2) - minC;
+
+    for (const [r, c] of pattern.cells) {
+      newGrid.add(`${r + offsetR},${c + offsetC}`);
+    }
+
     setGrid(newGrid);
     setGeneration(0);
     setStats([]);
@@ -308,23 +342,24 @@ export default function App() {
                     </button>
                   </div>
                   <div className="flex-1 min-h-0">
-                    <Controls 
-                      isRunning={isRunning}
-                      onToggleRunning={() => setIsRunning(!isRunning)}
-                      onReset={handleReset}
-                      onStep={handleStep}
-                      onRandomize={handleRandomize}
-                      speed={speed}
-                      onSpeedChange={setSpeed}
-                      gridSize={gridSize}
-                      onGridSizeChange={handleGridSizeChange}
-                      survivalRules={survivalRules}
-                      onSurvivalRulesChange={setSurvivalRules}
-                      birthRules={birthRules}
-                      onBirthRulesChange={setBirthRules}
-                      generationLimit={generationLimit}
-                      onGenerationLimitChange={setGenerationLimit}
-                    />
+                      <Controls 
+                        isRunning={isRunning}
+                        onToggleRunning={() => setIsRunning(!isRunning)}
+                        onReset={handleReset}
+                        onStep={handleStep}
+                        onRandomize={handleRandomize}
+                        onPresetLoad={handlePresetLoad}
+                        speed={speed}
+                        onSpeedChange={setSpeed}
+                        gridSize={gridSize}
+                        onGridSizeChange={handleGridSizeChange}
+                        survivalRules={survivalRules}
+                        onSurvivalRulesChange={setSurvivalRules}
+                        birthRules={birthRules}
+                        onBirthRulesChange={setBirthRules}
+                        generationLimit={generationLimit}
+                        onGenerationLimitChange={setGenerationLimit}
+                      />
                   </div>
                 </div>
               </motion.div>
@@ -378,6 +413,7 @@ export default function App() {
             onReset={handleReset}
             onStep={handleStep}
             onRandomize={handleRandomize}
+            onPresetLoad={handlePresetLoad}
             speed={speed}
             onSpeedChange={setSpeed}
             gridSize={gridSize}

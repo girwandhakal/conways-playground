@@ -126,8 +126,10 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
     const r = Math.floor(y / dimensions.cellSize);
     const c = Math.floor(x / dimensions.cellSize);
     
-    // Let players interact with an infinite grid! No bounding constraints on clicks.
-    return { r, c };
+    if (r >= 0 && r < rows && c >= 0 && c < cols) {
+      return { r, c };
+    }
+    return null;
   };
 
   const maxZoom = Math.max(8, rows / 4);
