@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Grid } from './components/Grid';
 import { Controls } from './components/Controls';
 import { Stats } from './components/Stats';
+import { InteractiveButton } from './components/ui/InteractiveButton';
 import { createGrid, nextGeneration } from './lib/gameLogic';
-import { SimulationStats } from './types';
+import { CellColorMode, SimulationStats } from './types';
 import { cn } from './lib/utils';
 
 const INITIAL_GRID_SIZE = 50;
@@ -25,6 +26,8 @@ export default function App() {
   const [birthRules, setBirthRules] = useState<number[]>([3]);
   const [generationLimit, setGenerationLimit] = useState<number | null>(null);
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const [cellColorMode, setCellColorMode] = useState<CellColorMode>('solid');
+  const [cellColor, setCellColor] = useState('#1e1b4b');
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -217,12 +220,16 @@ export default function App() {
                 <p className="text-sm text-slate-600 font-sans leading-relaxed">
                   The ecosystem has reached a stable state. No further biological changes detected in the current generation.
                 </p>
-                <button 
+                <InteractiveButton 
                   onClick={() => setIsConverged(false)}
-                  className="mt-10 w-full py-4 bg-black text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest"
+                  variant="primary"
+                  tone="blue"
+                  size="lg"
+                  className="mt-10 w-full"
+                  contentClassName="tracking-[0.26em]"
                 >
                   Return to Bench
-                </button>
+                </InteractiveButton>
               </motion.div>
             ) : isLimitReached ? (
               <motion.div 
@@ -238,12 +245,16 @@ export default function App() {
                 <p className="text-sm text-slate-600 font-sans leading-relaxed">
                   Generation limit of {generationLimit} reached. The simulation has paused.
                 </p>
-                <button 
+                <InteractiveButton 
                   onClick={() => setIsLimitReached(false)}
-                  className="mt-10 w-full py-4 bg-black text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest"
+                  variant="primary"
+                  tone="blue"
+                  size="lg"
+                  className="mt-10 w-full"
+                  contentClassName="tracking-[0.26em]"
                 >
                   Return to Bench
-                </button>
+                </InteractiveButton>
               </motion.div>
             ) : (
               <motion.div 
@@ -252,14 +263,15 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="bg-white border border-slate-200 p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-[0_32px_80px_-16px_rgba(0,0,0,0.3)] w-full max-w-lg mx-4 relative"
               >
-                <motion.button 
-                  whileHover={{ scale: 1.1, backgroundColor: '#F1F5F9' }}
-                  whileTap={{ scale: 0.9 }}
+                <InteractiveButton 
                   onClick={() => setShowInfo(false)}
-                  className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full transition-colors text-slate-400 hover:text-black"
+                  variant="ghost"
+                  tone="blue"
+                  size="icon"
+                  className="absolute top-8 right-8 rounded-full text-slate-400 hover:text-black"
                 >
                   <X className="w-5 h-5" />
-                </motion.button>
+                </InteractiveButton>
                 <h3 className="text-sm font-sans font-black text-black mb-6 uppercase tracking-widest border-b border-slate-100 pb-5">About</h3>
                 <div className="space-y-4">
                   <p className="text-xs text-slate-700 leading-relaxed font-sans">
@@ -278,12 +290,15 @@ export default function App() {
       {/* Header */}
       <header className="h-14 border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 bg-white z-20">
         <div className="flex items-center gap-3">
-          <button 
+          <InteractiveButton 
             onClick={() => setShowControlsMobile(!showControlsMobile)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600 active:scale-95 transition-transform"
+            variant="secondary"
+            tone="blue"
+            size="icon"
+            className="lg:hidden text-slate-600"
           >
             <Settings2 className="w-5 h-5" />
-          </button>
+          </InteractiveButton>
           <div className="hidden sm:flex w-8 h-8 rounded-lg border border-slate-200 items-center justify-center bg-slate-50 shadow-sm">
             <Terminal className="w-4 h-4 text-black" />
           </div>
@@ -291,23 +306,25 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">
-           <motion.button 
-             whileHover={{ scale: 1.05 }}
-             whileTap={{ scale: 0.95 }}
+           <InteractiveButton 
              onClick={() => setShowStatsMobile(!showStatsMobile)}
-             className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600"
+             variant="secondary"
+             tone="blue"
+             size="icon"
+             className="lg:hidden text-slate-600"
             >
             <BarChart3 className="w-5 h-5" />
-          </motion.button>
+          </InteractiveButton>
 
-           <motion.button 
-             whileHover={{ scale: 1.05 }}
-             whileTap={{ scale: 0.95 }}
+           <InteractiveButton 
              onClick={() => setShowInfo(!showInfo)}
-             className="w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-xl lg:rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-slate-600 shadow-sm"
+             variant="secondary"
+             tone="blue"
+             size="icon"
+             className="h-10 w-10 lg:h-8 lg:w-8 lg:rounded-lg text-slate-600 shadow-sm"
             >
             <Info className="w-5 h-5 lg:w-4 lg:h-4" />
-          </motion.button>
+          </InteractiveButton>
         </div>
       </header>
 
@@ -334,12 +351,15 @@ export default function App() {
                 <div className="h-full relative flex flex-col">
                   <div className="h-14 flex items-center justify-between px-6 border-b border-slate-100 flex-shrink-0">
                     <h2 className="text-[10px] font-sans font-black uppercase tracking-widest text-slate-400">Configuration</h2>
-                    <button 
+                    <InteractiveButton 
                       onClick={() => setShowControlsMobile(false)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+                      variant="ghost"
+                      tone="blue"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-slate-500"
                     >
                       <X className="w-4 h-4" />
-                    </button>
+                    </InteractiveButton>
                   </div>
                   <div className="flex-1 min-h-0">
                       <Controls 
@@ -359,6 +379,10 @@ export default function App() {
                         onBirthRulesChange={setBirthRules}
                         generationLimit={generationLimit}
                         onGenerationLimitChange={setGenerationLimit}
+                        cellColorMode={cellColorMode}
+                        onCellColorModeChange={setCellColorMode}
+                        cellColor={cellColor}
+                        onCellColorChange={setCellColor}
                       />
                   </div>
                 </div>
@@ -384,12 +408,15 @@ export default function App() {
               >
                 <div className="h-full relative flex flex-col">
                   <div className="h-14 flex items-center justify-between px-6 border-b border-slate-100 flex-shrink-0">
-                    <button 
+                    <InteractiveButton 
                       onClick={() => setShowStatsMobile(false)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+                      variant="ghost"
+                      tone="blue"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-slate-500"
                     >
                       <X className="w-4 h-4" />
-                    </button>
+                    </InteractiveButton>
                     <h2 className="text-[10px] font-sans font-black uppercase tracking-widest text-slate-400">Analysis</h2>
                   </div>
                   <div className="flex-1 min-h-0">
@@ -424,6 +451,10 @@ export default function App() {
             onBirthRulesChange={setBirthRules}
             generationLimit={generationLimit}
             onGenerationLimitChange={setGenerationLimit}
+            cellColorMode={cellColorMode}
+            onCellColorModeChange={setCellColorMode}
+            cellColor={cellColor}
+            onCellColorChange={setCellColor}
           />
         </div>
         
@@ -435,6 +466,9 @@ export default function App() {
                 cols={gridSize}
                 onToggleCell={handleToggleCell} 
                 onPaintCell={handlePaintCell}
+                colorMode={cellColorMode}
+                cellColor={cellColor}
+                generation={generation}
               />
           </div>
         </div>

@@ -1,8 +1,10 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, StepForward, Shuffle, Grid3X3, ChevronDown, Settings2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, StepForward, Shuffle, Grid3X3, ChevronDown, Settings2, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { PRESETS, Pattern } from '../lib/presets';
+import { CellColorMode } from '../types';
+import { InteractiveButton } from './ui/InteractiveButton';
 
 interface ControlsProps {
   isRunning: boolean;
@@ -21,7 +23,19 @@ interface ControlsProps {
   onBirthRulesChange: (rules: number[]) => void;
   generationLimit: number | null;
   onGenerationLimitChange: (limit: number | null) => void;
+  cellColorMode: CellColorMode;
+  onCellColorModeChange: (mode: CellColorMode) => void;
+  cellColor: string;
+  onCellColorChange: (color: string) => void;
 }
+
+const colorModes: { value: CellColorMode; label: string }[] = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'rainbow', label: 'Rainbow' },
+  { value: 'multicolor', label: 'Multi' },
+  { value: 'flashing', label: 'Flash' },
+  { value: 'random', label: 'Random' },
+];
 
 export const Controls: React.FC<ControlsProps> = ({
   isRunning,
@@ -40,6 +54,10 @@ export const Controls: React.FC<ControlsProps> = ({
   onBirthRulesChange,
   generationLimit,
   onGenerationLimitChange,
+  cellColorMode,
+  onCellColorModeChange,
+  cellColor,
+  onCellColorChange,
 }) => {
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
@@ -55,47 +73,50 @@ export const Controls: React.FC<ControlsProps> = ({
     <div className="flex flex-col gap-6 p-6 w-full glass-panel h-full overflow-y-auto">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <InteractiveButton
             onClick={onToggleRunning}
-            className={cn(
-              "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-sans font-bold text-xs transition-all shadow-sm",
-              isRunning 
-                ? "bg-rose-600 text-white hover:bg-rose-700" 
-                : "bg-black text-white hover:bg-slate-800"
-            )}
+            variant={isRunning ? 'danger' : 'primary'}
+            tone="blue"
+            size="md"
+            className="w-full"
+            contentClassName="tracking-[0.24em]"
           >
             {isRunning ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
             {isRunning ? 'PAUSE' : 'START'}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          </InteractiveButton>
+          <InteractiveButton
             onClick={onStep}
             disabled={isRunning}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl glass-button text-black font-sans font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="secondary"
+            tone="blue"
+            size="md"
+            className="w-full"
+            contentClassName="tracking-[0.24em]"
           >
             <StepForward className="w-4 h-4" /> STEP
-          </motion.button>
+          </InteractiveButton>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <InteractiveButton
             onClick={onRandomize}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl glass-button text-black font-sans font-bold text-xs"
+            variant="secondary"
+            tone="blue"
+            size="md"
+            className="w-full"
+            contentClassName="tracking-[0.24em]"
           >
             <Shuffle className="w-4 h-4" /> MIX
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          </InteractiveButton>
+          <InteractiveButton
             onClick={onReset}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl glass-button text-black font-sans font-bold text-xs"
+            variant="secondary"
+            tone="slate"
+            size="md"
+            className="w-full"
+            contentClassName="tracking-[0.24em]"
           >
             <RotateCcw className="w-4 h-4" /> RESET
-          </motion.button>
+          </InteractiveButton>
         </div>
       </div>
 
@@ -103,17 +124,21 @@ export const Controls: React.FC<ControlsProps> = ({
         <h2 className="text-xs font-sans font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
           <Grid3X3 className="w-3 h-3 text-black" /> Presets
         </h2>
-        
+
         <div className="flex flex-col gap-2">
-           {PRESETS.map((preset) => (
-              <button
-                 key={preset.name}
-                 onClick={() => onPresetLoad(preset)}
-                 className="text-left px-4 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-sans font-bold text-slate-700 transition-colors flex justify-between items-center"
-              >
-                  {preset.name}
-              </button>
-           ))}
+          {PRESETS.map((preset) => (
+            <InteractiveButton
+              key={preset.name}
+              onClick={() => onPresetLoad(preset)}
+              variant="secondary"
+              tone="blue"
+              size="sm"
+              className="w-full justify-start px-4 normal-case tracking-[0.08em]"
+              contentClassName="w-full justify-between"
+            >
+              {preset.name}
+            </InteractiveButton>
+          ))}
         </div>
       </div>
 
@@ -153,16 +178,20 @@ export const Controls: React.FC<ControlsProps> = ({
         </div>
 
         <div className="pt-2">
-          <button 
+          <InteractiveButton
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-between w-full py-3 text-[10px] font-sans font-bold text-slate-500 uppercase tracking-widest hover:text-black transition-colors border-t border-slate-100"
+            variant="ghost"
+            tone="blue"
+            size="sm"
+            className="w-full justify-between border-t border-slate-100 rounded-none px-0 pt-3 pb-0 text-[10px] tracking-[0.24em]"
+            contentClassName="w-full justify-between"
           >
             <div className="flex items-center gap-2">
               <Settings2 className="w-3 h-3" />
               Advanced Settings
             </div>
-            <ChevronDown className={cn("w-3 h-3 transition-transform duration-300", showAdvanced && "rotate-180")} />
-          </button>
+            <ChevronDown className={cn('w-3 h-3 transition-transform duration-300', showAdvanced && 'rotate-180')} />
+          </InteractiveButton>
 
           <AnimatePresence>
             {showAdvanced && (
@@ -175,19 +204,19 @@ export const Controls: React.FC<ControlsProps> = ({
                 <div className="space-y-3">
                   <span className="text-[9px] font-sans font-bold text-slate-400 uppercase tracking-wider">Survival Threshold</span>
                   <div className="grid grid-cols-5 gap-1">
-                    {[0,1,2,3,4,5,6,7,8].map(n => (
-                      <button
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                      <InteractiveButton
                         key={`s-${n}`}
                         onClick={() => toggleRule(survivalRules, onSurvivalRulesChange, n)}
-                        className={cn(
-                          "h-6 rounded-md text-[10px] font-mono font-bold transition-all border",
-                          survivalRules.includes(n) 
-                            ? "bg-black text-white border-black" 
-                            : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
-                        )}
+                        variant="chip"
+                        tone="slate"
+                        size="xs"
+                        active={survivalRules.includes(n)}
+                        className="font-mono"
+                        contentClassName="font-mono tracking-normal"
                       >
                         {n}
-                      </button>
+                      </InteractiveButton>
                     ))}
                   </div>
                 </div>
@@ -195,19 +224,19 @@ export const Controls: React.FC<ControlsProps> = ({
                 <div className="space-y-3">
                   <span className="text-[9px] font-sans font-bold text-slate-400 uppercase tracking-wider">Birth Threshold</span>
                   <div className="grid grid-cols-5 gap-1">
-                    {[0,1,2,3,4,5,6,7,8].map(n => (
-                      <button
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                      <InteractiveButton
                         key={`b-${n}`}
                         onClick={() => toggleRule(birthRules, onBirthRulesChange, n)}
-                        className={cn(
-                          "h-6 rounded-md text-[10px] font-mono font-bold transition-all border",
-                          birthRules.includes(n) 
-                            ? "bg-blue-600 text-white border-blue-600" 
-                            : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
-                        )}
+                        variant="chip"
+                        tone="blue"
+                        size="xs"
+                        active={birthRules.includes(n)}
+                        className="font-mono"
+                        contentClassName="font-mono tracking-normal"
                       >
                         {n}
-                      </button>
+                      </InteractiveButton>
                     ))}
                   </div>
                 </div>
@@ -215,47 +244,100 @@ export const Controls: React.FC<ControlsProps> = ({
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[9px] font-sans font-bold text-slate-400 uppercase tracking-wider">
                     <span>Generation Limit</span>
-                    <span className="font-mono bg-slate-100/50 px-1.5 py-0.5 rounded text-slate-500">{generationLimit === null ? '∞' : generationLimit}</span>
+                    <span className="font-mono bg-slate-100/50 px-1.5 py-0.5 rounded text-slate-500">
+                      {generationLimit === null ? 'INF' : generationLimit}
+                    </span>
                   </div>
                   <div className="flex bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
-                    <button
+                    <InteractiveButton
                       onClick={() => onGenerationLimitChange(null)}
-                      className={cn(
-                        "flex-1 py-1.5 text-[10px] font-bold font-sans transition-colors",
-                        generationLimit === null
-                          ? "bg-black text-white"
-                          : "text-slate-500 hover:bg-slate-100"
-                      )}
+                      variant="segment"
+                      tone="slate"
+                      size="sm"
+                      active={generationLimit === null}
+                      className="flex-1 rounded-none border-0 shadow-none"
+                      contentClassName="tracking-[0.18em]"
                     >
                       None
-                    </button>
-                    {[100, 500, 1000].map(limit => (
-                      <button
+                    </InteractiveButton>
+                    {[100, 500, 1000].map((limit) => (
+                      <InteractiveButton
                         key={limit}
                         onClick={() => onGenerationLimitChange(limit)}
-                        className={cn(
-                          "flex-1 py-1.5 border-l border-slate-200 text-[10px] font-bold font-sans transition-colors",
-                          generationLimit === limit
-                            ? "bg-black text-white border-transparent"
-                            : "text-slate-500 hover:bg-slate-100"
-                        )}
+                        variant="segment"
+                        tone="slate"
+                        size="sm"
+                        active={generationLimit === limit}
+                        className="flex-1 rounded-none border-y-0 border-r-0 border-l border-l-slate-200 shadow-none"
+                        contentClassName="tracking-[0.18em]"
                       >
                         {limit}
-                      </button>
+                      </InteractiveButton>
                     ))}
                   </div>
                 </div>
 
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-[9px] font-sans font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5">
+                      <Palette className="h-3 w-3" />
+                      Cell Color
+                    </span>
+                    <span className="font-mono bg-slate-100/50 px-1.5 py-0.5 rounded text-slate-500">{cellColorMode}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {colorModes.map((mode) => (
+                      <InteractiveButton
+                        key={mode.value}
+                        onClick={() => onCellColorModeChange(mode.value)}
+                        variant="chip"
+                        tone="blue"
+                        size="sm"
+                        active={cellColorMode === mode.value}
+                        className="w-full"
+                        contentClassName="tracking-[0.16em]"
+                      >
+                        {mode.label}
+                      </InteractiveButton>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                    <div
+                      className="h-10 w-10 rounded-lg border border-slate-200 shadow-inner"
+                      style={{ backgroundColor: cellColor }}
+                    />
+                    <div className="flex-1">
+                      <p className="text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-slate-700">Base Color</p>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        Used for solid and flashing modes, and as the palette anchor for rainbow and multicolor.
+                      </p>
+                    </div>
+                    <input
+                      type="color"
+                      value={cellColor}
+                      onChange={(e) => onCellColorChange(e.target.value)}
+                      className="h-10 w-10 cursor-pointer rounded-lg border border-slate-200 bg-transparent p-1"
+                      aria-label="Choose live cell color"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-2">
-                  <button
+                  <InteractiveButton
                     onClick={() => {
                       onSurvivalRulesChange([2, 3]);
                       onBirthRulesChange([3]);
+                      onCellColorModeChange('solid');
+                      onCellColorChange('#1e1b4b');
                     }}
-                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-sans font-bold uppercase tracking-wider rounded-md transition-colors"
+                    variant="secondary"
+                    tone="blue"
+                    size="sm"
+                    className="w-full"
+                    contentClassName="tracking-[0.2em]"
                   >
                     Reset
-                  </button>
+                  </InteractiveButton>
                 </div>
               </motion.div>
             )}
