@@ -20,18 +20,25 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
   const startMousePos = useRef({ x: 0, y: 0 });
   const lastPaintedCell = useRef<{ r: number, c: number } | null>(null);
 
-  // High-resolution multiplier for "SVG-like" sharpness
-  const dpr = 4;
+  const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
+  const gridLineThickness = 1 / dpr;
+  const snapToDevicePixel = useCallback((value: number) => {
+    return Math.round(value * dpr) / dpr;
+  }, [dpr]);
 
   useEffect(() => {
     const updateSize = () => {
       if (!containerRef.current) return;
       const { width, height } = containerRef.current.getBoundingClientRect();
-      const size = Math.min(width, height) - 40; // Padding
+      const availableSize = Math.max(0, Math.min(width, height) - 40);
+      const availablePixels = Math.floor(availableSize * dpr);
+      const boardWidth = (Math.max(cols, Math.floor(availablePixels / cols) * cols)) / dpr;
+      const boardHeight = (Math.max(rows, Math.floor(availablePixels / rows) * rows)) / dpr;
+
       setDimensions({
-        width: size,
-        height: size,
-        cellSize: size / rows
+        width: boardWidth,
+        height: boardHeight,
+        cellSize: Math.min(boardWidth / cols, boardHeight / rows)
       });
     };
 
@@ -40,7 +47,7 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
     if (containerRef.current) resizeObserver.observe(containerRef.current);
     
     return () => resizeObserver.disconnect();
-  }, [rows]);
+  }, [rows, cols, dpr]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -55,11 +62,14 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
     // Calculate internal transform
     // We want to scale around the center, applying our pan
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
     // Apply viewport transform (zoom/pan)
     // We center the canvas coordinate system, apply transform, then move back
-    ctx.translate(dimensions.width / 2 + pan.x, dimensions.height / 2 + pan.y);
+    const translateX = snapToDevicePixel(dimensions.width / 2 + pan.x);
+    const translateY = snapToDevicePixel(dimensions.height / 2 + pan.y);
+    ctx.translate(translateX, translateY);
     ctx.scale(scale, scale);
     ctx.translate(-dimensions.width / 2, -dimensions.height / 2);
 
@@ -69,31 +79,14 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
 
     const { cellSize } = dimensions;
 
-    // Draw subtle dot pattern background
-    ctx.fillStyle = '#F1F5F9';
-    const dotSpacing = rows > 150 ? 8 : (rows > 100 ? 5 : 2);
-    for (let r = 0; r < rows; r += dotSpacing) {
-      for (let c = 0; c < cols; c += dotSpacing) {
-        ctx.beginPath();
-        ctx.arc(c * cellSize + cellSize/2, r * cellSize + cellSize/2, 0.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
     // Draw grid lines
-    ctx.strokeStyle = '#000000';
-    // Dynamically thin the lines as we zoom in for that "engraved" look
-    ctx.lineWidth = Math.max(0.05, (dimensions.cellSize < 2 ? 0.05 : 0.1) / scale);
-    ctx.beginPath();
+    ctx.fillStyle = '#D7DEE7';
     for (let r = 0; r <= rows; r++) {
-      ctx.moveTo(0, r * cellSize);
-      ctx.lineTo(cols * cellSize, r * cellSize);
+      ctx.fillRect(0, r * cellSize, cols * cellSize, gridLineThickness / scale);
     }
     for (let c = 0; c <= cols; c++) {
-      ctx.moveTo(c * cellSize, 0);
-      ctx.lineTo(c * cellSize, rows * cellSize);
+      ctx.fillRect(c * cellSize, 0, gridLineThickness / scale, rows * cellSize);
     }
-    ctx.stroke();
 
     // Draw cells
     ctx.fillStyle = '#1E1B4B';
@@ -103,10 +96,10 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
       const r = parseInt(rStr, 10);
       const c = parseInt(cStr, 10);
       
-      const gap = cellSize > 2 ? 0.3 : 0;
+      const gap = cellSize > 6 ? gridLineThickness / scale : 0;
       ctx.fillRect(c * cellSize + gap, r * cellSize + gap, cellSize - gap * 2, cellSize - gap * 2);
     }
-  }, [grid, dimensions, rows, cols, scale, pan]);
+  }, [grid, dimensions, rows, cols, scale, pan, snapToDevicePixel]);
 
   useEffect(() => {
     draw();
@@ -163,7 +156,7 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
     newPanY = Math.min(Math.max(newPanY, -limitY), limitY);
 
     setScale(newScale);
-    setPan({ x: newPanX, y: newPanY });
+    setPan({ x: snapToDevicePixel(newPanX), y: snapToDevicePixel(newPanY) });
     
     if (newScale === 1) {
       setPan({ x: 0, y: 0 });
@@ -187,7 +180,7 @@ export const Grid: React.FC<GridProps> = ({ grid, rows, cols, onToggleCell, onPa
         const limitY = Math.max(0, (dimensions.height * scale - dimensions.height) / 2);
         newX = Math.min(Math.max(newX, -limitX), limitX);
         newY = Math.min(Math.max(newY, -limitY), limitY);
-        setPan({ x: newX, y: newY });
+        setPan({ x: snapToDevicePixel(newX), y: snapToDevicePixel(newY) });
       };
       
       const onMouseUp = () => {
